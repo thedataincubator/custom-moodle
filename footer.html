@@ -1,5 +1,5 @@
 <script>
-function openCenteredPopup(url, title, w, h) {
+function openCenteredPopup(url, target, w, h) {
     // Get the position of the current window
     const dualScreenLeft = window.screenLeft !== undefined ? window.screenLeft : window.screenX;
     const dualScreenTop = window.screenTop !== undefined ? window.screenTop : window.screenY;
@@ -13,7 +13,7 @@ function openCenteredPopup(url, title, w, h) {
     const top = ((height / 2) - (h / 2)) + dualScreenTop;
 
     // Open the window
-    const newWindow = window.open(url, title, `width=${w},height=${h},top=${top},left=${left},scrollbars=yes,resizable=yes`);
+    const newWindow = window.open(url, target, `width=${w},height=${h},top=${top},left=${left},scrollbars=yes,resizable=yes`);
 
     // Focus the new window if it opened successfully
     if (window.focus && newWindow) {
@@ -23,56 +23,46 @@ function openCenteredPopup(url, title, w, h) {
     return newWindow;
 }
 
-function catchCSP(iframe, origUrl) {
-  return () => {
-    try {
-      const url = iframe.contentWindow.location.href;
-      console.log('Iframe nav to', url);
-    } catch (error) {
-      console.log('CSP error, presumably for log in');
-      console.log(error);
-      const modal = document.getElementById('loginModal');
-      const modalYes = document.getElementById('loginModalYes');
-      const modalNo = document.getElementById('loginModalNo');
+const IFRAME = (src) => `<div class="fixed-iframe"><iframe src="${src}"></iframe></div>`;
+const LOADING = `<span class="loading">Loading your NeuralSeek details...</span>`;
+const LOGIN = `<span class="login">Please log in to NeuralSeek</span>
+               <button class="login btn btn-primary">Log In</button>`;
+const LOGGEDIN = (expire) => `<span class="logged-in">You are logged into NeuralSeek.  Your trial account expires at ${expire}.</span>`;
+const EXPIRED = (expire) => `<span class="expired>Your NeuralSeek trail expired as of ${expire}.</span>`
 
-      modalYes.addEventListener('click', () => {
-        const newWin = openCenteredPopup(origUrl, '_blank', 800, 600);
-        console.log(newWin)
-        newWin.addEventListener('load', () => {
-          try {
-            const url = newWin.contentWindow.location.href;
-            console.log('New window nav', url);
-          } catch (error) {
-            console.log('New window error, probably ext nav', error);
-          }
-        });
-        modal.close();
-      });
-      modal.showModal();
+async function probeAndEmbed(nsDiv) {
+  const resp = await fetch('ht' + 'tps://partners.neuralseek.com/api/session', { method: 'GET', credentials: 'include' });
+  const nsData = await resp.json();
+  console.log(nsData);
+  if (nsData.authed) {
+    if (!nsData.expired) {
+      doEmbed(nsDiv, nsData);
+    } else {
+      nsData.innerHTML = EXPIRED(nsData.trialExpires)
     }
+    return true;
   }
+  return false;
 }
 
-async function checkCanEmbed(url) {
-    try {
-        const response = await fetch(url, { method: 'GET', credentials: 'include' });
-        const csp = response.headers.get('content-security-policy');
+function doEmbed(nsDiv, nsData) {
+  const nspage = nsDiv.dataset.nspage ?? '/home';
+  nsDiv.innerHTML = LOGGEDIN(nsData.trialExpires);
+  nsDiv.insertAdjacentHTML('afterend', IFRAME(nsData.consoleBaseUrl + nspage));
+  setEmbedSize();
+}
 
-        if (csp && csp.includes("frame-ancestors 'none'")) {
-             console.error("Embedding will fail due to frame-ancestors restrictions.");
-             return false;
-        }
-        return true;
-    } catch (error) {
-        console.warn("Unable to check headers due to CORS restrictions.", error);
-        return null;
+function pollForLogin(nsDiv, successFunc){
+  setTimeout(async () => {
+    if (await probeAndEmbed(nsDiv)) {
+      successFunc();
+    } else {
+      pollForLogin(nsDiv, successFunc);
     }
+  }, 1000)
 }
 
-// Need to delay until requirejs loaded.
-document.addEventListener('DOMContentLoaded', () => {
-
-if (document.querySelector('.fixed-iframe')) {
+function setEmbedSize() {
   // Set layout width
   let loaded = false;
   const pageWrapper = document.getElementById('page-wrapper');
@@ -105,41 +95,21 @@ if (document.querySelector('.fixed-iframe')) {
   });
   observer.observe(pageWrapper);
   observer.observe(document.body);
-
-  // Set URL to NS instance
-  const iframe = document.querySelector('.fixed-iframe > iframe');
-  const nspage = iframe.dataset.nspage;
-  if (nspage) {
-    require(['core/ajax'], (ajax) => {
-      ajax.call([{
-        methodname: 'core_user_get_users_by_field',
-        args: { field: 'id', values: [M.cfg.userId] }
-      }])[0].done((response) => {
-        const customfields = response?.[0]?.customfields ?? [];
-        let nsid = null;
-        for (let { shortname, value } of customfields) {
-          if (shortname === 'nsid') {
-            nsid = value;
-          }
-        }
-        if (nsid) {
-          console.log('Found ID', nsid);
-          const nsurl = "ht" + "tps://console-partners.neuralseek.com/" + nsid + nspage;
-          checkCanEmbed(nsurl).then((res) => console.log('Check embed', res));
-
-          iframe.addEventListener('load', catchCSP(iframe, nsurl));
-          iframe.src = nsurl;
-        } else {
-          console.warning('Unable to find NeuralSeek ID');
-          console.warning(response);
-        }
-      }).fail((error) => {
-        console.warning('Unable to load user info');
-        console.warning(error);
-      })
-    })
-  }
 }
 
-});
+async function loadNSEmbed() {
+  const nsDiv = document.querySelector('.ns-embed');
+  if (!nsDiv) { return; }
+
+  nsDiv.innerHTML = LOADING;
+  if (!await probeAndEmbed(nsDiv)) {
+    nsDiv.innerHTML = LOGIN;
+    const button = nsDiv.querySelector('button.login');
+    button.addEventListener('click', () => {
+      const loginWindow = openCenteredPopup('ht' + 'tps://partners.neuralseek.com/launchTrial.html', '_blank', 600, 800);
+      pollForLogin(nsDiv, () => { loginWindow.close(); });
+    });
+  }
+}
+loadNSEmbed();
 </script>
