@@ -22,48 +22,46 @@ function openCenteredPopup(url, target, w, h) {
     return newWindow;
 }
 
-function showModal(okFunc) {
-  const modal = document.getElementById('loginModal');
-  const modalYes = document.getElementById('loginModalYes');
-  const modalNo = document.getElementById('loginModalNo');
+const IFRAME = (src) => `<div class="fixed-iframe"><iframe src="${src}"></iframe></div>`;
+const LOADING = `<span class="loading">Loading your NeuralSeek details...</span>`;
+const LOGIN = `<span class="login">Please log in to NeuralSeek</span>
+               <button class="login btn btn-primary">Log In</button>`;
+const LOGGEDIN = (expire) => `<span class="logged-in">You are logged into NeuralSeek.  Your trial account expires at ${expire}.</span>`;
+const EXPIRED = (expire) => `<span class="expired>Your NeuralSeek trail expired as of ${expire}.</span>`
 
-  modalYes.addEventListener('click', () => {
-    okFunc();
-    modal.close();
-  });
-  modal.showModal();
-}
-
-async function probeAndEmbed() {
+async function probeAndEmbed(nsDiv) {
   const resp = await fetch('https://partners.neuralseek.com/api/session', { method: 'GET', credentials: 'include' });
   const nsData = await resp.json();
   console.log(nsData);
   if (nsData.authed) {
-    doEmbed(nsData);
+    if (!nsData.expired) {
+      doEmbed(nsDiv, nsData);
+    } else {
+      nsData.innerHTML = EXPIRED(nsData.trialExpires)
+    }
     return true;
   }
   return false;
 }
 
-function doEmbed(nsData) {
-  const iframe = document.querySelector('.fixed-iframe > iframe');
-  const nspage = iframe.dataset.nspage;
-  if (nspage) {
-    iframe.src = nsData.consoleBaseUrl + nspage;
-  }
+function doEmbed(nsDiv, nsData) {
+  const nspage = nsDiv.dataset.nspage ?? '/home';
+  nsDiv.innerHTML = LOGGEDIN(nsData.trialExpires);
+  nsDiv.insertAdjacentHTML('afterend', IFRAME(nsData.consoleBaseUrl + nspage));
+  setEmbedSize();
 }
 
-function pollForLogin(successFunc){
+function pollForLogin(nsDiv, successFunc){
   setTimeout(async () => {
-    if (await probeAndEmbed()) {
+    if (await probeAndEmbed(nsDiv)) {
       successFunc();
     } else {
-      pollForLogin(successFunc);
+      pollForLogin(nsDiv, successFunc);
     }
   }, 1000)
 }
 
-if (document.querySelector('.fixed-iframe')) {
+function setEmbedSize() {
   // Set layout width
   let loaded = false;
   const pageWrapper = document.getElementById('page-wrapper');
@@ -96,14 +94,20 @@ if (document.querySelector('.fixed-iframe')) {
   });
   observer.observe(pageWrapper);
   observer.observe(document.body);
-
-  (async () => {
-    if (!await probeAndEmbed()) {
-      // Trigger log-in window
-      showModal(() => {
-        const loginWindow = openCenteredPopup('https://partners.neuralseek.com/launchTrial.html', '_blank', 600, 800);
-        pollForLogin(() => { loginWindow.close(); });
-      });
-    }
-  })();
 }
+
+async function loadNSEmbed() {
+  const nsDiv = document.querySelector('.ns-embed');
+  if (!nsDiv) { return; }
+
+  nsDiv.innerHTML = LOADING;
+  if (!await probeAndEmbed(nsDiv)) {
+    nsDiv.innerHTML = LOGIN;
+    const button = nsDiv.querySelector('button.login');
+    button.addEventListener('click', () => {
+      const loginWindow = openCenteredPopup('https://partners.neuralseek.com/launchTrial.html', '_blank', 600, 800);
+      pollForLogin(nsDiv, () => { loginWindow.close(); });
+    });
+  }
+}
+loadNSEmbed();
