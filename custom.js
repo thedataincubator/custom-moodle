@@ -22,19 +22,6 @@ function openCenteredPopup(url, target, w, h) {
     return newWindow;
 }
 
-function onNSMessage(event) {
-  if (event.origin !== 'https://partners.neuralseek.com') {
-    console.warn('Received message from unknown origin:', event.origin);
-    return;
-  }
-  if (!event.data.authed) {
-    console.warn('User was not authorized:', event.data);
-    return;
-  }
-  doEmbed(event.data);
-  event.source.close();
-}
-
 function showModal(okFunc) {
   const modal = document.getElementById('loginModal');
   const modalYes = document.getElementById('loginModalYes');
@@ -76,9 +63,6 @@ function pollForLogin(successFunc){
   }, 1000)
 }
 
-// Need to delay until requirejs loaded.
-document.addEventListener('DOMContentLoaded', () => {
-
 if (document.querySelector('.fixed-iframe')) {
   // Set layout width
   let loaded = false;
@@ -113,7 +97,6 @@ if (document.querySelector('.fixed-iframe')) {
   observer.observe(pageWrapper);
   observer.observe(document.body);
 
-  //window.addEventListener('message', onNSMessage);
   (async () => {
     if (!await probeAndEmbed()) {
       // Trigger log-in window
@@ -124,41 +107,3 @@ if (document.querySelector('.fixed-iframe')) {
     }
   })();
 }
-
-if (false) {
-  // Set URL to NS instance
-  const iframe = document.querySelector('.fixed-iframe > iframe');
-  const nspage = iframe.dataset.nspage;
-  if (nspage) {
-    require(['core/ajax'], (ajax) => {
-      ajax.call([{
-        methodname: 'core_user_get_users_by_field',
-        args: { field: 'id', values: [M.cfg.userId] }
-      }])[0].done((response) => {
-        const customfields = response?.[0]?.customfields ?? [];
-        let nsid = null;
-        for (let { shortname, value } of customfields) {
-          if (shortname === 'nsid') {
-            nsid = value;
-          }
-        }
-        if (nsid) {
-          console.log('Found ID', nsid);
-          const nsurl = "ht" + "tps://console-partners.neuralseek.com/" + nsid + nspage;
-          checkCanEmbed(nsurl).then((res) => console.log('Check embed', res));
-
-          iframe.addEventListener('load', catchCSP(iframe, nsurl));
-          iframe.src = nsurl;
-        } else {
-          console.warning('Unable to find NeuralSeek ID');
-          console.warning(response);
-        }
-      }).fail((error) => {
-        console.warning('Unable to load user info');
-        console.warning(error);
-      })
-    })
-  }
-}
-
-});
