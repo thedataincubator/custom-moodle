@@ -61,17 +61,26 @@ async function probeAndEmbed(nsDiv) {
 }
 
 function doEmbed(nsDiv, nsData) {
+  const KEY = 'show-neuralseek-embed';
+  const showEmbed = ((localStorage.getItem(KEY) ?? 'true') === 'true');
   const nspage = nsDiv.dataset.nspage ?? '/home';
   const nsurl = nsData.consoleBaseUrl + nspage;
+
   nsDiv.innerHTML = LOGGEDIN(nsData, nsurl);
-  nsDiv.insertAdjacentHTML('afterend', IFRAME(nsurl));
-  const observer = setEmbedSize();
-  nsDiv.querySelector('.open-embed').addEventListener('click', () => doEmbed(nsDiv, nsData));
-  nsDiv.querySelector('.close-embed').addEventListener('click', () => {
-    observer.disconnect();
-    document.querySelector('.fixed-iframe').remove();
-    document.getElementById('page-wrapper').style.width = 'auto';
-  })
+  nsDiv.querySelector('.open-embed').addEventListener('click', () => {
+    localStorage.setItem(KEY, 'true');
+    doEmbed(nsDiv, nsData);  // This re-creates the buttons and gets a new observer hooked up
+  });
+  if (showEmbed) {
+    nsDiv.insertAdjacentHTML('afterend', IFRAME(nsurl));
+    const observer = setEmbedSize();
+    nsDiv.querySelector('.close-embed').addEventListener('click', () => {
+      observer.disconnect();
+      document.querySelector('.fixed-iframe').remove();
+      document.getElementById('page-wrapper').style.width = 'auto';
+      localStorage.setItem(KEY, 'false');
+    });
+  }
 }
 
 function pollForLogin(nsDiv, successFunc){
