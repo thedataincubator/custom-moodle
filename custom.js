@@ -34,8 +34,13 @@ const _container = (body) => `<div>${body}</div>`;
 const LOADING = _container(`<p>Loading your NeuralSeek details...</p>`);
 const LOGIN = _container(`<p class="login">Please log in to NeuralSeek</p>
                           <div class="buttons"><button class="login btn btn-primary">Log In</button></div>`);
-const LOGGEDIN = (data) => _container(`<p>You are logged into NeuralSeek as ${data.email}.</p>
-                                       <p>Your trial account expires on ${unixToLocal(data.trialExpires)}.</p>`);
+const LOGGEDIN = (data, url) => _container(`<p>You are logged into NeuralSeek as ${data.email}.</p>
+                                            <p>Your trial account expires on ${unixToLocal(data.trialExpires)}.</p>
+                                            <div class="buttons">
+                                              <a href=${url} target="learning-neuralseek" class="btn btn-primary">Open NeuralSeek Window</a>
+                                              <button class="open-embed btn btn-primary">Open NeuralSeek Pane</button>
+                                              <button class="close-embed btn btn-primary">Close NeuralSeek Pane</button>
+                                            </div>`);
 const EXPIRED = (data) => _container(`<p>You are logged into NeuralSeek as ${data.email}.</p>
                                       <p>Your trial account expired on ${unixToLocal(data.trialExpires)}.</p>
                                       <p>To continue with this training, please deposit 25¢.</p>`);
@@ -57,9 +62,16 @@ async function probeAndEmbed(nsDiv) {
 
 function doEmbed(nsDiv, nsData) {
   const nspage = nsDiv.dataset.nspage ?? '/home';
-  nsDiv.innerHTML = LOGGEDIN(nsData);
-  nsDiv.insertAdjacentHTML('afterend', IFRAME(nsData.consoleBaseUrl + nspage));
-  setEmbedSize();
+  const nsurl = nsData.consoleBaseUrl + nspage;
+  nsDiv.innerHTML = LOGGEDIN(nsData, nsurl);
+  nsDiv.insertAdjacentHTML('afterend', IFRAME(nsurl));
+  const observer = setEmbedSize();
+  nsDiv.querySelector('.open-embed').addEventListener('click', () => doEmbed(nsDiv, nsData));
+  nsDiv.querySelector('.close-embed').addEventListener('click', () => {
+    observer.disconnect();
+    document.querySelector('.fixed-iframe').remove();
+    document.getElementById('page-wrapper').style.width = 'auto';
+  })
 }
 
 function pollForLogin(nsDiv, successFunc){
@@ -105,6 +117,7 @@ function setEmbedSize() {
   });
   observer.observe(pageWrapper);
   observer.observe(document.body);
+  return observer;
 }
 
 async function loadNSEmbed() {

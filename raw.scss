@@ -52,6 +52,17 @@
 .ns-embed .buttons {
   text-align: right;
 }
+.ns-embed .close-embed {
+  display: none;
+}
+#page-wrapper:has(.fixed-iframe) {
+  .ns-embed .open-embed {
+    display: none;
+  }
+  .ns-embed .close-embed {
+    display: inline-block;
+  }
+}
 
 /* Keep the page from becoming too wide, such that videos don't fit vertically.
    The videos are 16:9, which would suggest a max-width of 177vh.  But the
