@@ -22,22 +22,33 @@ function openCenteredPopup(url, target, w, h) {
     return newWindow;
 }
 
+function unixToLocal(ts) {
+  const date = new Date(ts * 1000);
+  return date.toLocaleDateString();
+}
+
+const HTTPS = 'https://';  // Moodle helpfully wraps URLs in <a> elements.  Even inside of scripts.
+
 const IFRAME = (src) => `<div class="fixed-iframe"><iframe src="${src}"></iframe></div>`;
-const LOADING = `<span class="loading">Loading your NeuralSeek details...</span>`;
-const LOGIN = `<span class="login">Please log in to NeuralSeek</span>
-               <button class="login btn btn-primary">Log In</button>`;
-const LOGGEDIN = (expire) => `<span class="logged-in">You are logged into NeuralSeek.  Your trial account expires at ${expire}.</span>`;
-const EXPIRED = (expire) => `<span class="expired>Your NeuralSeek trail expired as of ${expire}.</span>`
+const _container = (body) => `<div>${body}</div>`;
+const LOADING = _container(`<p>Loading your NeuralSeek details...</p>`);
+const LOGIN = _container(`<p class="login">Please log in to NeuralSeek</p>
+                          <div class="buttons"><button class="login btn btn-primary">Log In</button></div>`);
+const LOGGEDIN = (data) => _container(`<p>You are logged into NeuralSeek as ${data.email}.</p>
+                                       <p>Your trial account expires on ${unixToLocal(data.trialExpires)}.</p>`);
+const EXPIRED = (data) => _container(`<p>You are logged into NeuralSeek as ${data.email}.</p>
+                                      <p>Your trial account expired on ${unixToLocal(data.trialExpires)}.</p>
+                                      <p>To continue with this training, please deposit 25¢.</p>`);
 
 async function probeAndEmbed(nsDiv) {
-  const resp = await fetch('https://partners.neuralseek.com/api/session', { method: 'GET', credentials: 'include' });
+  const resp = await fetch(HTTPS + 'partners.neuralseek.com/api/session', { method: 'GET', credentials: 'include' });
   const nsData = await resp.json();
   console.log(nsData);
   if (nsData.authed) {
     if (!nsData.expired) {
       doEmbed(nsDiv, nsData);
     } else {
-      nsData.innerHTML = EXPIRED(nsData.trialExpires)
+      nsDiv.innerHTML = EXPIRED(nsData)
     }
     return true;
   }
@@ -46,7 +57,7 @@ async function probeAndEmbed(nsDiv) {
 
 function doEmbed(nsDiv, nsData) {
   const nspage = nsDiv.dataset.nspage ?? '/home';
-  nsDiv.innerHTML = LOGGEDIN(nsData.trialExpires);
+  nsDiv.innerHTML = LOGGEDIN(nsData);
   nsDiv.insertAdjacentHTML('afterend', IFRAME(nsData.consoleBaseUrl + nspage));
   setEmbedSize();
 }
@@ -105,7 +116,7 @@ async function loadNSEmbed() {
     nsDiv.innerHTML = LOGIN;
     const button = nsDiv.querySelector('button.login');
     button.addEventListener('click', () => {
-      const loginWindow = openCenteredPopup('https://partners.neuralseek.com/launchTrial.html', '_blank', 600, 800);
+      const loginWindow = openCenteredPopup(HTTPS + 'partners.neuralseek.com/launchTrial.html', '_blank', 600, 800);
       pollForLogin(nsDiv, () => { loginWindow.close(); });
     });
   }

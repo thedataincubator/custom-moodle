@@ -25,6 +25,34 @@
   }
 }
 
+.ns-embed {
+  background-color: #131316;
+  background-image: radial-gradient(ellipse 1100px 900px at 18% 8%,#301E4C 0%,transparent 55%),radial-gradient(ellipse 900px 750px at 82% 26%,rgba(48,30,76,.72),transparent 55%),radial-gradient(ellipse 1300px 850px at 8% 72%,rgba(48,30,76,.55),transparent 60%),radial-gradient(ellipse 1050px 900px at 92% 96%,#301E4C 0%,transparent 55%),radial-gradient(ellipse 800px 600px at 50% 50%,rgba(48,30,76,.18),transparent 70%);
+  color: rgba(255,255,255,.95);
+  margin: 1em 0em;
+  border-radius: 1em;
+  padding: 0.5em;
+  display: flex;
+  align-items: center;
+}
+.ns-embed::before {
+  content: "";
+  background-image: url("https://partners.neuralseek.com/images/ns-white.svg");
+  background-size: cover;
+  width: 4em;
+  height: 4em;
+  flex-shrink: 0;
+}
+.ns-embed > div {
+  flex-grow: 1;
+}
+.ns-embed p {
+  margin: 0.5em;
+}
+.ns-embed .buttons {
+  text-align: right;
+}
+
 /* Keep the page from becoming too wide, such that videos don't fit vertically.
    The videos are 16:9, which would suggest a max-width of 177vh.  But the
    header takes up some room, and a bit of extra space probably helps.  Targeting
