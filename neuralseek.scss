@@ -1,0 +1,27 @@
+/**
+ * Snippet Title: NeuralSeek Styles
+ * Scope:         global
+ * Goal:          eyecandy
+ * Description:   NeuralSeek styling
+ * Creator:       RDS
+ * Tested on:     Production
+**/
+
+nav.navbar.fixed-top {
+  background-color: #131316;
+  background-image:
+    radial-gradient(ellipse 1100px 900px at 18% 8%,  #301E4C 0%, transparent 55%),
+    radial-gradient(ellipse 900px 750px at 82% 26%, rgba(48, 30, 76, 0.72), transparent 55%),
+    radial-gradient(ellipse 1300px 850px at 8% 72%, rgba(48, 30, 76, 0.55), transparent 60%),
+    radial-gradient(ellipse 1050px 900px at 92% 96%, #301E4C 0%, transparent 55%),
+    radial-gradient(ellipse 800px 600px at 50% 50%, rgba(48, 30, 76, 0.18), transparent 70%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+body {
+  font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+pre, code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}

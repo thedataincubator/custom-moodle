@@ -1,0 +1,20 @@
+/**
+ * Snippet Title: Video Size
+ * Scope:         course
+ * Goal:          eyecandy
+ * Description:   Keep the page narrow enough that videos fit vertically
+ * Creator:       RDS
+ * Tested on:     Production
+**/
+
+/* Keep the page from becoming too wide, such that videos don't fit vertically.
+   The videos are 16:9, which would suggest a max-width of 177vh.  But the
+   header takes up some room, and a bit of extra space probably helps.  Targeting
+   this element also changes the page headers.
+
+   Note that pages set a maximum with themselves, which will override this setting.
+*/
+#page.drawers .main-inner {
+  max-width: 150vh;
+  margin: auto;
+}

@@ -1,0 +1,47 @@
+/**
+ * Snippet Title: NeuralSeek Widget
+ * Scope:         course
+ * Goal:          eyecandy
+ * Description:   Style the embedded NeuralSeek widget
+ * Creator:       RDS
+ * Tested on:     Production
+**/
+
+.ns-embed {
+  background-color: #131316;
+  background-image: radial-gradient(ellipse 1100px 900px at 18% 8%,#301E4C 0%,transparent 55%),radial-gradient(ellipse 900px 750px at 82% 26%,rgba(48,30,76,.72),transparent 55%),radial-gradient(ellipse 1300px 850px at 8% 72%,rgba(48,30,76,.55),transparent 60%),radial-gradient(ellipse 1050px 900px at 92% 96%,#301E4C 0%,transparent 55%),radial-gradient(ellipse 800px 600px at 50% 50%,rgba(48,30,76,.18),transparent 70%);
+  color: rgba(255,255,255,.95);
+  margin: 1em 0em;
+  border-radius: 1em;
+  padding: 0.5em;
+  display: flex;
+  align-items: center;
+}
+.ns-embed::before {
+  content: "";
+  background-image: url("https://partners.neuralseek.com/images/ns-white.svg");
+  background-size: cover;
+  width: 4em;
+  height: 4em;
+  flex-shrink: 0;
+}
+.ns-embed > div {
+  flex-grow: 1;
+}
+.ns-embed p {
+  margin: 0.5em;
+}
+.ns-embed .buttons {
+  text-align: right;
+}
+.ns-embed .close-embed {
+  display: none;
+}
+#page-wrapper:has(.fixed-iframe) {
+  .ns-embed .open-embed {
+    display: none;
+  }
+  .ns-embed .close-embed {
+    display: inline-block;
+  }
+}
