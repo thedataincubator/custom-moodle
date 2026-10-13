@@ -1,0 +1,12 @@
+/**
+ * Snippet Title: Adjust page width
+ * Scope:         course
+ * Goal:          visibility
+ * Description:   Sets the "page" type moodle objects to be 1200px max instead of 830px
+ * Creator:       RO
+**/
+
+body#page-mod-page-view #page.drawers .main-inner {
+        max-width: 1200px;
+}
+
